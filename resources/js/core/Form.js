@@ -8,6 +8,7 @@ class Form {
      */
     constructor(data) {
         this.originalData = data;
+        this.isLoading = false;
 
         for (let field in data) {
             this[field] = data[field];
@@ -67,8 +68,9 @@ class Form {
      * .
      * @param {string} url     
      */
-    postDataWithFileHeaders(url) {                
-        return this.submitFile('post', url);
+    postDataWithFileHeaders(url) { 
+        let formData = this.formData();               
+        return this.submitFile('post', url, formData);
     }
 
 
@@ -79,6 +81,18 @@ class Form {
      */
     put(url) {
         return this.submit('put', url);
+    }
+
+
+    /**
+     * Send a PUT request to the given URL along with file data
+     * .
+     * @param {string} url
+     */
+    putDataWithFileHeaders(url) {
+        let formData = this.formData();
+        formData.append("_method", "put");
+        return this.submitFile('post', url, formData);
     }
 
 
@@ -110,30 +124,31 @@ class Form {
      */
     submit(requestType, url) {
         return new Promise((resolve, reject) => {
+            this.isLoading = true;
             axios[requestType](url, this.data())
                 .then(response => {
                     console.log('success');
-                    this.onSuccess(response.data);
+                    this.onSuccess(response.data);                    
 
                     resolve(response.data);
                 })
                 .catch(error => {
                     console.log('failed api');
                     console.log(error.response.data.errors);
-                    this.onFail(error.response.data.errors);
+                    this.onFail(error.response.data.errors);                    
 
                     reject(error.response.data);
                 });
         });
     }
     
-    submitFile(requestType, url) {
-        
+    submitFile(requestType, url, formData) {        
         return new Promise((resolve, reject) => {
+            this.isLoading = true;
             const config = {
                 headers: { 'content-type': 'multipart/form-data' }
-            }
-            axios[requestType](url, this.formData(), config)
+            }            
+            axios[requestType](url, formData, config)
                 .then(response => {
                     console.log('success');
                     this.onSuccess(response.data);
@@ -144,7 +159,7 @@ class Form {
                     console.log('failed api');
                     console.log(error.response.data.errors);
                     this.onFail(error.response.data.errors);
-
+                    
                     reject(error.response.data);
                 });
         });
@@ -159,6 +174,7 @@ class Form {
     onSuccess(data) {
        // console.log(data.message); // temporary
         //return data;
+        this.isLoading = false;
         this.reset();
     }
 
@@ -171,6 +187,7 @@ class Form {
     onFail(errors) {
         console.log("in form on fail");
         console.log(errors);
+        this.isLoading = false;
         this.errors.record(errors);
     }
 }

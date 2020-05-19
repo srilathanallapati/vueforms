@@ -13,7 +13,7 @@
 </style>
 <script>
     export default{
-        //props: ['selectedImage'],
+        props: ['courseImage'],
         data(){
             return {
                 image: '',
@@ -47,8 +47,12 @@
                 });
             }*/
         },
-        mounted() {
-            console.log('Image upload component mounted.')
+        created() {
+            //console.log('Image upload component mounted.');            
+            if(this.courseImage){                
+                this.selectedImage = this.courseImage;
+                this.image = this.courseImage;
+            }
         }
     }
 </script>

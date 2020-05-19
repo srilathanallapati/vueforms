@@ -11,8 +11,8 @@
         
     </div>
     <div class="flex flex-wrap ml-6">
-        <div v-for="course in courses" :key="course.name" class="w-2/5  mt-8 mr-8 max-w-sm rounded overflow-hidden shadow-lg">
-            <img class="w-full" src="/images/card-top.jpg" alt="Sunset in the mountains">
+        <div v-for="course in courses" :key="course.id" class="w-2/5  mt-8 mr-8 max-w-sm rounded overflow-hidden shadow-lg">
+            <img class="w-full" :src="course.catalog_image" :alt="course.name">
             <div class="px-6 py-4">
                 <div class="font-bold text-xl mb-2">{{ course.name }}</div>
                 <p class="text-gray-700 text-base">{{ course.description }}</p>
@@ -42,7 +42,13 @@
                 this.form.post('/courses')
                     .then(response => alert('created!'))
                     .catch(error => alert('failed'));
-            }
+            },
+            getImageSrc(image){
+                if(image){
+                    //return this.baseUrl + '/storage/' +image;
+                    return '/storage/' +image;
+                }
+            },
         },        
         components: {
             

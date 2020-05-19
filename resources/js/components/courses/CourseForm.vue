@@ -1,12 +1,11 @@
 <template>
     <div class="ml-8">         
         <div>
-            <h1 class="text-blue-500 mb-3 text-xl p-1 border-b-2 border-orange-500">
-                Create Course
-            </h1>
+            <h1 v-show="!editMode" class="text-blue-500 mb-3 text-xl p-1 border-b-2 border-orange-500">Create Course</h1>
+            <h1 v-show="editMode" class="text-blue-500 mb-3 text-xl p-1 border-b-2 border-orange-500">Edit Course</h1>
         </div>
-        <div class="w-1/3">
-            <form method="POST" action="/courses" @submit.prevent="onSubmit" 
+        <div class="w-2/3">
+            <form @submit.prevent="editMode ? onEditSubmit() : onSubmit()" 
                 @keydown="form.errors.clear($event.target.name)" enctype="multipart/form-data">
                 <div class="mb-6 mt-6">
                     <label class="block mb-2 uppercase font-bold text-xs text-gray-700">
@@ -31,20 +30,24 @@
                     for="image">
                         Catalog Image
                     </label>
-                    <ImageUpload v-on:receiveImage="onImageUpload"></ImageUpload>
+                    <ImageUpload v-on:receiveImage="onImageUpload" 
+                        :courseImage="courseImage"></ImageUpload>
                     <div class="text-red-500 text-xs italic" v-if="form.errors.has('catalog_image')" 
                     v-text="form.errors.get('catalog_image')"></div>            
                 </div>
-                <div class="mb-6 mt-6 ">
+                <div class="mb-12">
                     <label class="block mb-2 uppercase font-bold text-xs text-gray-700">
                         Tags:
                     </label>                
-                    <Tags :tag-options="tagOptions" v-on:recordTags="onRecordTags"></Tags>
+                    <Tags :tag-options="tagOptions" :tagsSelected="parseJSONTags" v-on:recordTags="onRecordTags"></Tags>
                     <div class="text-red-500 text-xs italic" v-if="form.errors.has('tags')" 
                         v-text="form.errors.get('tags')"></div>
                 </div>
-                <div class="block mt-4">
-                    <button class="shadow bg-blue-900 hover:bg-blue-800 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded" :disabled="form.errors.any()">Create</button>
+                <div>
+                    <button v-show="!editMode" class="shadow bg-blue-900 hover:bg-blue-800 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded" 
+                     :disabled="form.errors.any()">Create</button>
+                     <button v-show="editMode" class="shadow bg-blue-900 hover:bg-blue-800 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded" 
+                     >Update</button>                     
                 </div>
             </form>
         </div>
@@ -57,15 +60,23 @@
     import ImageUpload from '../core/ImageUpload.vue';
 
     export default {
-        props: ['tagOptions'],
+        props: ['tagOptions','course'],
         data: function () {
-            return {                
+            return {   
+                editMode: false, 
+                courseImage: '',        
                 form: new Form({
+                    id: '',
                     name: '',
                     description: '',                    
                     tags: [],
                     catalog_image: '',
                 })
+            }
+        },
+        computed: {
+            parseJSONTags: function () {                
+                return (this.form.tags.length > 0)? JSON.parse(this.form.tags):[];
             }
         },
         methods: {
@@ -74,11 +85,15 @@
                     .then(response => window.location.href = '/courses')
                     .catch(error => alert('failed'));
             },
+            onEditSubmit() {                
+                this.form.putDataWithFileHeaders('/courses/'+this.form.id)
+                    .then(response => window.location.href = '/courses')
+                    .catch(error => alert('failed'));
+            },
             onImageUpload: function (image){
                 this.form.catalog_image = image;
             },
-            onRecordTags: function (tags) {
-                //console.log(JSON.stringify(tags));
+            onRecordTags: function (tags) {                
                 this.form.tags = JSON.stringify(tags);
             }
         },        
@@ -87,9 +102,16 @@
             Tags,
             ImageUpload
         },
-        mounted() {
-            //console.log('CourseForm component mounted.') ;
-            //console.log(this.tagOptions);
+        created() {            
+            //console.log(this.course); 
+            if(this.course){
+                this.editMode = true;
+                this.form.id = this.course.id;           
+                this.form.name = this.course.name;
+                this.form.description = this.course.description;
+                this.form.tags = JSON.stringify(this.course.tags);
+                this.courseImage = this.course.catalog_image;                 
+            }
         }
     }
 </script>

@@ -1,6 +1,5 @@
 <x-master>
-    <div>    
-        {{$course_tags}}
-        <course-form :tag-options="{{$tags}}"></course-form>  
+    <div>       
+        <course-form :course="{{$course}}" :tag-options="{{$tags}}"></course-form>  
     </div>
 </x-master>

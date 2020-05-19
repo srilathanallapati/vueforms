@@ -15,4 +15,14 @@ class Course extends Model
         ->withTimestamps();
     }
 
+    public function getCatalogImageAttribute($value) {
+        if($value) {
+            $value = 'storage/'.$value;
+        }        
+        //return asset($value);
+        return asset($value ?: '/images/default-course-img.jpg');
+        
+    }
+
+
 }

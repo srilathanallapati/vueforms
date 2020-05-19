@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Course;
 use App\Tags;
 
@@ -9,65 +10,62 @@ class CoursesController extends Controller
 {
     public function index()
     {       
-        $courses = Course::with('tags')->get();                 
+        $courses = Course::with('tags')->get();
         return view('courses.index', compact('courses'));
-    }
-    
+    }    
     public function create()
-    {    
+    {
         $tags = Tags::all();
         return view('courses.create',[
             'tags'=> $tags
         ]);
     }    
     public function store()
-    {           
-        $attributes = $this->validate(request(), [
-            'name' => 'required',
-            'description' => 'required',
-            'catalog_image' => ['required', 'image'],
-            'tags' => ['required']
-        ]);
-        $courseAttributes = [
-            'name' => $attributes['name'],
-            'description' => $attributes['description'],
-        ];      
+    {        
+        $courseAttributes = $this->ValidateCourse();
         if (request('catalog_image')) {            
            $courseAttributes['catalog_image'] = request('catalog_image')->store('catalog_images');
-        }       
+        }
         $course = new Course($courseAttributes);
         $course->save();
 
-        if(request()->has('tags') && request('tags')!==null){            
-            $selectedTags = json_decode(request('tags'));            
-            $selectedTagsIds = [];
-            foreach ($selectedTags as $tag) {                
-                $tagObj = Tags::firstOrCreate(['name' => $tag->name]);                             
-                $selectedTagsIds[] = $tagObj->id;
-            }                     
+        if(request()->has('tags') && request('tags')!==null){
+            $selectedTags = json_decode(request('tags'));
+            $tag = new Tags();
+            $selectedTagsIds = $tag->createTags($selectedTags);
             $course->tags()->attach($selectedTagsIds);
         }
+
+        return ['message' => 'Course Created'];        
         
-        return ['message' => 'Course Created'];
-        //return redirect('/courses');
     }
     public function edit(Course $course)
-    {                  
-        $tags = Tags::all();
-        
-        return view('courses.create', [                    
-            'course_tags' => $course->tags(),
+    {    
+        $tags = Tags::all();  
+        $course->tags;
+
+        return view('courses.edit',[
+            'course'=>$course,            
+            'tags'=> $tags
         ]);
+
     }
-
     public function update(Course $course)
-    {
-        if (request('avatar')) {
-            $attributes['avatar'] = request('avatar')->store('avatars');
+    {        
+        $courseAttributes = $this->ValidateCourse();
+        if (request('catalog_image')) {
+           $courseAttributes['catalog_image'] = request('catalog_image')->store('catalog_images');
         }
-        
-        $user->update($attributes);
+        $course->update($courseAttributes);
 
+        if(request()->has('tags') && request('tags')!==null){
+            $selectedTags = json_decode(request('tags'));
+            $tag = new Tags();
+            $selectedTagsIds = $tag->createTags($selectedTags);
+            $course->tags()->sync($selectedTagsIds);            
+        }
+
+        return ['message' => 'Course Updated'];
     }
     public function fileupload()
     {        
@@ -78,6 +76,20 @@ class CoursesController extends Controller
            $attr = request('file')->store('catalog_images');           
         }
         return ['message' => 'Image uploaded'];
+    }
+    protected function ValidateCourse()
+    {        
+        $attributes = $this->validate(request(),[
+            'name' => 'required',
+            'description' => 'required',
+            'catalog_image' => ['required', 'image'],
+            'tags' => ['required']
+        ]);
+        $courseAttributes = [
+            'name' => $attributes['name'],
+            'description' => $attributes['description'],
+        ];                 
+        return $courseAttributes;
     }
 
 }
